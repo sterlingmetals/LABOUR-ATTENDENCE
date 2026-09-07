@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>मजदूर हाज़िरी</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F3EE;
+    --panel:#FFFFFF;
+    --ink:#16213E;
+    --ink-soft:#5B6472;
+    --line:#E4E0D6;
+    --accent:#FFB800;
+    --accent-ink:#3A2E00;
+    --present:#3A7D44;
+    --half:#C9822B;
+    --leave:#4A6FA5;
+    --absent:#C1443C;
+    --danger:#C1443C;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Hind',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative;}
+
+  /* ---------- Auth screens ---------- */
+  .auth-wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;}
+  .auth-mark{width:56px;height:56px;background:var(--ink);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:18px;}
+  .auth-wrap h1{font-size:26px;font-weight:700;margin:0 0 4px;letter-spacing:-0.01em;}
+  .auth-wrap p.sub{color:var(--ink-soft);margin:0 0 28px;font-size:15px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;font-weight:500;}
+  .field input, .field select{
+    width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;
+    font-family:inherit;font-size:16px;background:var(--panel);color:var(--ink);
+  }
+  .field input:focus, .field select:focus{outline:none;border-color:var(--ink);}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:13px 18px;border-radius:10px;border:none;font-family:inherit;
+    font-size:16px;font-weight:600;cursor:pointer;width:100%;
+  }
+  .btn-primary{background:var(--ink);color:#fff;}
+  .btn-primary:active{background:#0f1830;}
+  .btn-accent{background:var(--accent);color:var(--accent-ink);}
+  .btn-outline{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+  .btn-danger{background:transparent;color:var(--danger);border:1.5px solid #EFC6C1;}
+  .btn-small{padding:8px 12px;font-size:13px;width:auto;}
+  .link-btn{background:none;border:none;color:var(--ink-soft);font-family:inherit;font-size:14px;text-decoration:underline;cursor:pointer;padding:0;margin-top:16px;}
+  .error-msg{background:#FBEAE8;color:var(--danger);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px;}
+  .hint-msg{background:#FFF6DF;color:var(--accent-ink);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:18px;line-height:1.5;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:10;background:var(--ink);color:#fff;
+    padding:16px 18px 14px;display:flex;align-items:center;justify-content:space-between;
+  }
+  .topbar .who{display:flex;flex-direction:column;}
+  .topbar .app-name{font-weight:700;font-size:17px;letter-spacing:-0.01em;}
+  .topbar .role-badge{font-size:11px;opacity:0.75;margin-top:2px;}
+  .topbar button{background:rgba(255,255,255,0.12);border:none;color:#fff;padding:8px 10px;border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer;}
+
+  /* ---------- Content ---------- */
+  .content{flex:1;padding:16px 16px 90px;overflow-y:auto;}
+  .section-title{font-size:19px;font-weight:700;margin:4px 0 14px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;}
+  .empty{text-align:center;color:var(--ink-soft);padding:40px 20px;font-size:14px;}
+
+  /* ---------- Date nav ---------- */
+  .date-nav{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 8px;margin-bottom:14px;}
+  .date-nav button{background:var(--bg);border:none;width:36px;height:36px;border-radius:9px;font-size:16px;cursor:pointer;color:var(--ink);}
+  .date-nav button:disabled{opacity:0.3;cursor:not-allowed;}
+  .date-nav .date-label{font-weight:600;font-size:15px;text-align:center;flex:1;}
+  .date-nav .date-label .today-tag{display:block;font-size:11px;color:var(--ink-soft);font-weight:500;margin-top:1px;}
+
+  /* ---------- Worker row (attendance) ---------- */
+  .worker-att-row{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--line);}
+  .worker-att-row:last-child{border-bottom:none;}
+  .w-info .w-name{font-weight:600;font-size:15px;}
+  .w-info .w-wage{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .status-btns{display:flex;gap:5px;}
+  .status-btn{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--line);background:var(--panel);font-size:13px;font-weight:700;cursor:pointer;color:var(--ink-soft);}
+  .status-btn[data-s="P"].active{background:var(--present);border-color:var(--present);color:#fff;}
+  .status-btn[data-s="H"].active{background:var(--half);border-color:var(--half);color:#fff;}
+  .status-btn[data-s="L"].active{background:var(--leave);border-color:var(--leave);color:#fff;}
+  .status-btn[data-s="A"].active{background:var(--absent);border-color:var(--absent);color:#fff;}
+  .status-btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+  /* ---------- Worker manage ---------- */
+  .worker-row{display:flex;align-items:center;justify-content:space-between;padding:13px 4px;border-bottom:1px solid var(--line);}
+  .worker-row:last-child{border-bottom:none;}
+  .worker-row .w-actions{display:flex;gap:6px;}
+  .icon-btn{background:var(--bg);border:none;width:32px;height:32px;border-radius:8px;font-size:14px;cursor:pointer;}
+  .fab{
+    position:fixed;bottom:82px;right:calc(50% - 240px + 18px);z-index:11;
+    background:var(--accent);color:var(--accent-ink);border:none;width:52px;height:52px;border-radius:16px;
+    font-size:24px;font-weight:700;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.18);
+  }
+  @media (max-width:480px){.fab{right:18px;}}
+
+  /* ---------- Salary table ---------- */
+  .salary-summary{background:var(--ink);color:#fff;border-radius:14px;padding:18px;margin-bottom:14px;}
+  .salary-summary .amt{font-size:30px;font-weight:700;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;}
+  .salary-summary .lbl{font-size:12px;opacity:0.7;margin-top:2px;}
+  table.salary-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.salary-table th{text-align:left;color:var(--ink-soft);font-weight:600;padding:8px 6px;border-bottom:1.5px solid var(--line);font-size:11px;}
+  table.salary-table td{padding:10px 6px;border-bottom:1px solid var(--line);}
+  table.salary-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  table.salary-table tr:last-child td{border-bottom:none;}
+  .name-cell{font-weight:600;}
+
+  /* ---------- Bottom nav ---------- */
+  .bottom-nav{
+    position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--line);
+    display:flex;max-width:480px;margin:0 auto;z-index:10;
+  }
+  .bottom-nav button{
+    flex:1;background:none;border:none;padding:10px 4px 12px;font-family:inherit;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-soft);font-size:11px;font-weight:500;
+  }
+  .bottom-nav button .ic{font-size:19px;}
+  .bottom-nav button.active{color:var(--ink);}
+  .bottom-nav button.active .ic{transform:translateY(-1px);}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,20,35,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:20;}
+  .modal-overlay.top-align{align-items:center;padding:20px;}
+  .modal-sheet{background:var(--panel);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 20px 26px;max-height:88vh;overflow-y:auto;}
+  .modal-overlay.top-align .modal-sheet{border-radius:16px;max-height:85vh;}
+  .modal-sheet h3{margin:0 0 16px;font-size:18px;font-weight:700;}
+  .modal-actions{display:flex;gap:8px;margin-top:6px;}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row .t-label{font-size:14px;font-weight:600;}
+  .toggle-row .t-desc{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .switch{position:relative;width:44px;height:26px;flex-shrink:0;margin-left:10px;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:var(--line);border-radius:14px;cursor:pointer;transition:0.15s;}
+  .slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.15s;}
+  input:checked + .slider{background:var(--present);}
+  input:checked + .slider:before{transform:translateX(18px);}
+  .role-pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--bg);color:var(--ink-soft);}
+  .role-pill.admin{background:#FFF6DF;color:var(--accent-ink);}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===================== STATE ===================== */
+  var state = {
+    booted:false,
+    adminExists:false,
+    session:null,      // {role:'admin'|'subadmin', username, permissions}
+    workers:[],
+    attendance:{},      // { 'YYYY-MM-DD': { workerId: 'P'|'H'|'L'|'A' } }
+    adminCred:null,     // {username,password}
+    subadmins:[],
+    view:'attendance',
+    attDate: todayStr(),
+    salaryMonth: todayStr().slice(0,7), // YYYY-MM
+    modal:null,          // {type,...}
+    authMode:'login',
+    authError:''
+  };
+
+  function todayStr(){
+    var d=new Date();
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  }
+  function pad(n){return n<10?'0'+n:''+n;}
+  function fmtDateLabel(iso){
+    var d=new Date(iso+'T00:00:00');
+    var days=['रवि','सोम','मंगल','बुध','गुरु','शुक्र','शनि'];
+    var months=['जन','फ़र','मार्च','अप्रैल','मई','जून','जुल','अग','सित','अक्तू','नव','दिस'];
+    return days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+  }
+  function monthLabel(ym){
+    var parts=ym.split('-');
+    var months=['जनवरी','फ़रवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्तूबर','नवंबर','दिसंबर'];
+    return months[parseInt(parts[1],10)-1]+' '+parts[0];
+  }
+  function uid(){return 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+  function money(n){
+    n = Math.round(n);
+    return '₹'+n.toLocaleString('en-IN');
+  }
+  function daysInMonth(ym){
+    var p=ym.split('-'); return new Date(parseInt(p[0]),parseInt(p[1]),0).getDate();
+  }
+
+  /* ===================== STORAGE ===================== */
+  async function loadAll(){
+    try{
+      var cred = await safeGet('admin_credentials');
+      state.adminCred = cred ? JSON.parse(cred.value) : null;
+      state.adminExists = !!state.adminCred;
+    }catch(e){ state.adminCred=null; state.adminExists=false; }
+
+    try{ var w = await safeGet('workers'); state.workers = w? JSON.parse(w.value): []; }catch(e){ state.workers=[]; }
+    try{ var a = await safeGet('attendance'); state.attendance = a? JSON.parse(a.value): {}; }catch(e){ state.attendance={}; }
+    try{ var s = await safeGet('subadmins'); state.subadmins = s? JSON.parse(s.value): []; }catch(e){ state.subadmins=[]; }
+
+    state.booted = true;
+    render();
+  }
+  async function safeGet(key){
+    try{ return await window.storage.get(key,false); }catch(e){ return null; }
+  }
+  async function saveWorkers(){ await window.storage.set('workers', JSON.stringify(state.workers), false); }
+  async function saveAttendance(){ await window.storage.set('attendance', JSON.stringify(state.attendance), false); }
+  async function saveSubadmins(){ await window.storage.set('subadmins', JSON.stringify(state.subadmins), false); }
+  async function saveAdminCred(){ await window.storage.set('admin_credentials', JSON.stringify(state.adminCred), false); }
+
+  /* ===================== AUTH ===================== */
+  function fullAdminPermissions(){
+    return { markAttendance:true, editPastAttendance:true, manageWorkers:true, editWageRate:true, viewSalary:true, manageUsers:true };
+  }
+
+  function doAdminSetup(username, password){
+    if(!username || !password){ state.authError='यूज़रनेम और पासवर्ड दोनों भरें।'; render(); return; }
+    if(password.length<4){ state.authError='पासवर्ड कम से कम 4 अक्षर का हो।'; render(); return; }
+    state.adminCred = {username:username.trim(), password:password};
+    state.adminExists = true;
+    saveAdminCred();
+    state.authError='';
+    state.session = {role:'admin', username:state.adminCred.username, permissions:fullAdminPermissions()};
+    render();
+  }
+
+  function doLogin(username, password){
+    username = (username||'').trim();
+    if(state.adminCred && username===state.adminCred.username && password===state.adminCred.password){
+      state.session = {role:'admin', username:username, permissions:fullAdminPermissions()};
+      state.authError=''; render(); return;
+    }
+    var found = state.subadmins.find(function(u){return u.username===username && u.password===password;});
+    if(found){
+      state.session = {role:'subadmin', username:found.username, id:found.id, permissions:found.permissions};
+      state.authError=''; render(); return;
+    }
+    state.authError='यूज़रनेम या पासवर्ड ग़लत है।';
+    render();
+  }
+
+  function logout(){
+    state.session=null; state.view='attendance'; state.authError=''; render();
+  }
+
+  function can(perm){
+    if(!state.session) return false;
+    return !!state.session.permissions[perm];
+  }
+
+  /* ===================== RENDER ROOT ===================== */
+  function render(){
+    var root = document.getElementById('app');
+    if(!state.booted){
+      root.innerHTML = '<div class="auth-wrap"><p class="sub">लोड हो रहा है…</p></div>';
+      return;
+    }
+    if(!state.session){
+      root.innerHTML = renderAuth();
+      bindAuthEvents();
+      return;
+    }
+    root.innerHTML = renderTopbar() + renderContent() + renderBottomNav() + renderModal();
+    bindGlobalEvents();
+  }
+
+  /* ===================== AUTH SCREENS ===================== */
+  function renderAuth(){
+    if(!state.adminExists){
+      return ''+
+      '<div class="auth-wrap">'+
+        '<div class="auth-mark">👷</div>'+
+        '<h1>मजदूर हाज़िरी</h1>'+
+        '<p class="sub">शुरुआत करने के लिए एडमिन अकाउंट बनाएं</p>'+
+        (state.authError?'<div class="error-msg">'+esc(state.authError)+'</div>':'')+
+        '<div class="field"><label>एडमिन यूज़रनेम</label><input id="su-user" type="text" placeholder="जैसे: ramesh_admin" autocomplete="off"></div>'+
+        '<div class="field"><label>पासवर्ड</label><input id="su-pass" type="password" placeholder="कम से कम 4 अक्षर"></div>'+
+        '<button class="btn btn-primary" id="btn-setup">एडमिन अकाउंट बनाएं</button>'+
+        '<div class="hint-msg">यह अकाउंट सारी सेटिंग्स कंट्रोल करेगा — मज़दूर जोड़ना, हाज़िरी ठीक करना, सब-एडमिन बनाना। बाद में आप सब-एडमिन बना कर उन्हें सीमित अधिकार दे सकते हैं।</div>'+
+      '</div>';
+    }
+    return ''+
+    '<div class="auth-wrap">'+
+      '<div class="auth-mark">👷</div>'+
+      '<h1>मजदूर हाज़िरी</h1>'+
+      '<p class="sub">लॉगिन करें</p>'+
+      (state.authError?'<div class="error-msg">'+esc(state.authError)+'</div>':'')+
+      '<div class="field"><label>यूज़रनेम</label><input id="li-user" type="text" autocomplete="off"></div>'+
+      '<div class="field"><label>पासवर्ड</label><input id="li-pass" type="password"></div>'+
+      '<button class="btn btn-primary" id="btn-login">लॉगिन करें</button>'+
+    '</div>';
+  }
+
+  function bindAuthEvents(){
+    var btnSetup = document.getElementById('btn-setup');
+    if(btnSetup){
+      btnSetup.onclick = function(){
+        doAdminSetup(document.getElementById('su-user').value, document.getElementById('su-pass').value);
+      };
+    }
+    var btnLogin = document.getElementById('btn-login');
+    if(btnLogin){
+      btnLogin.onclick = function(){
+        doLogin(document.getElementById('li-user').value, document.getElementById('li-pass').value);
+      };
+      document.getElementById('li-pass').addEventListener('keydown', function(e){
+        if(e.key==='Enter') btnLogin.click();
+      });
+    }
+  }
+
+  /* ===================== TOPBAR / NAV ===================== */
+  function renderTopbar(){
+    var roleLabel = state.session.role==='admin' ? 'एडमिन' : 'सब-एडमिन';
+    return ''+
+    '<div class="topbar">'+
+      '<div class="who"><div class="app-name">मजदूर हाज़िरी</div>'+
+      '<div class="role-badge">'+esc(state.session.username)+' · '+roleLabel+'</div></div>'+
+      '<button id="btn-logout">लॉगआउट</button>'+
+    '</div>';
+  }
+
+  function renderBottomNav(){
+    var tabs = [
+      {id:'attendance', ic:'✅', label:'हाज़िरी'},
+      {id:'workers', ic:'👷', label:'मज़दूर'},
+      {id:'salary', ic:'💰', label:'सैलरी'}
+    ];
+    if(state.session.role==='admin') tabs.push({id:'users', ic:'🔑', label:'यूज़र्स'});
+    var html = '<div class="bottom-nav">';
+    tabs.forEach(function(t){
+      html += '<button class="nav-btn '+(state.view===t.id?'active':'')+'" data-view="'+t.id+'"><span class="ic">'+t.ic+'</span>'+t.label+'</button>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  /* ===================== CONTENT ROUTER ===================== */
+  function renderContent(){
+    var html = '<div class="content">';
+    if(state.view==='attendance') html += renderAttendanceView();
+    else if(state.view==='workers') html += renderWorkersView();
+    else if(state.view==='salary') html += renderSalaryView();
+    else if(state.view==='users' && state.session.role==='admin') html += renderUsersView();
+    html += '</div>';
+    return html;
+  }
+
+  /* ===================== ATTENDANCE VIEW ===================== */
+  function renderAttendanceView(){
+    var isToday = state.attDate === todayStr();
+    var canEditThisDate = can('markAttendance') && (isToday || can('editPastAttendance'));
+    var canGoPast = can('editPastAttendance');
+
+    var html = '<div class="section-title">आज की हाज़िरी</div>';
+    html += '<div class="date-nav">';
+    html += '<button id="att-prev" '+(!canGoPast && !isToday ? '' : '')+'>‹</button>';
+    html += '<div class="date-label">'+fmtDateLabel(state.attDate)+(isToday?'<span class="today-tag">आज</span>':'')+'</div>';
+    var futureBlocked = state.attDate >= todayStr();
+    html += '<button id="att-next" '+(futureBlocked?'disabled':'')+'>›</button>';
+    html += '</div>';
+
+    if(!canEditThisDate && can('markAttendance')){
+      html += '<div class="hint-msg">आपको सिर्फ़ आज की हाज़िरी भरने का अधिकार है। पुरानी तारीख़ की हाज़िरी बदलने के लिए एडमिन से कहें।</div>';
+    }
+    if(!can('markAttendance')){
+      html += '<div class="hint-msg">आपके पास हाज़िरी भरने का अधिकार नहीं है — सिर्फ़ देखने की अनुमति है।</div>';
+    }
+
+    html += '<div class="legend">'+
+      '<span><span class="dot" style="background:var(--present)"></span>पूरा दिन (P)</span>'+
+      '<span><span class="dot" style="background:var(--half)"></span>आधा दिन (H)</span>'+
+      '<span><span class="dot" style="background:var(--leave)"></span>छुट्टी (L)</span>'+
+      '<span><span class="dot" style="background:var(--absent)"></span>ग़ैरहाज़िर (A)</span>'+
+    '</div>';
+
+    if(state.workers.length===0){
+      html += '<div class="card empty">अभी कोई मज़दूर जोड़ा नहीं गया।<br>पहले "मज़दूर" टैब में जाकर मज़दूर जोड़ें।</div>';
+      return html;
+    }
+
+    html += '<div class="card">';
+    state.workers.forEach(function(w){
+      var dayRecord = state.attendance[state.attDate] || {};
+      var cur = dayRecord[w.id] || '';
+      html += '<div class="worker-att-row">';
+      html += '<div class="w-info"><div class="w-name">'+esc(w.name)+'</div><div class="w-wage">'+money(w.dailyWage)+' / दिन</div></div>';
+      html += '<div class="status-btns">';
+      ['P','H','L','A'].forEach(function(s){
+        var dis = !canEditThisDate;
+        html += '<button class="status-btn '+(cur===s?'active':'')+'" data-s="'+s+'" data-worker="'+w.id+'" '+(dis?'disabled':'')+'>'+s+'</button>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  /* ===================== WORKERS VIEW ===================== */
+  function renderWorkersView(){
+    var canManage = can('manageWorkers');
+    var canWage = can('editWageRate');
+    var html = '<div class="section-title">मज़दूर सूची</div>';
+    if(state.workers.length===0){
+      html += '<div class="card empty">अभी कोई मज़दूर नहीं जोड़ा गया है।</div>';
+    } else {
+      html += '<div class="card">';
+      state.workers.forEach(function(w){
+        html += '<div class="worker-row">';
+        html += '<div class="w-info"><div class="w-name">'+esc(w.name)+'</div><div class="w-wage">'+money(w.dailyWage)+' / दिन'+(w.phone?' · '+esc(w.phone):'')+'</div></div>';
+        if(canManage || canWage){
+          html += '<div class="w-actions">';
+          if(canWage) html += '<button class="icon-btn" data-edit-wage="'+w.id+'" title="दिहाड़ी बदलें">₹</button>';
+          if(canManage) html += '<button class="icon-btn" data-edit-worker="'+w.id+'" title="पूरी जानकारी एडिट करें">✏️</button>';
+          if(canManage) html += '<button class="icon-btn" data-del-worker="'+w.id+'" title="हटाएं">🗑️</button>';
+          html += '</div>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    if(!canManage && !canWage){
+      html += '<div class="hint-msg">आपके पास मज़दूर जोड़ने/बदलने का अधिकार नहीं है — यह सिर्फ़ एडमिन कर सकता है।</div>';
+    } else if(!canManage && canWage){
+      html += '<div class="hint-msg">आपके पास सिर्फ़ दिहाड़ी (₹) बदलने का अधिकार है। नया मज़दूर जोड़ना, नाम/फ़ोन बदलना या हटाना सिर्फ़ एडमिन कर सकता है।</div>';
+    } else if(canManage && !canWage){
+      html += '<div class="hint-msg">आपके पास मज़दूर जोड़ने/नाम-फ़ोन बदलने का अधिकार है, लेकिन दिहाड़ी (₹) बदलने का अधिकार नहीं है।</div>';
+    }
+    if(canManage){
+      html += '<button class="fab" id="btn-add-worker">+</button>';
+    }
+    return html;
+  }
+
+  /* ===================== SALARY VIEW ===================== */
+  function renderSalaryView(){
+    if(!can('viewSalary')){
+      return '<div class="section-title">सैलरी रिपोर्ट</div><div class="hint-msg">आपके पास सैलरी रिपोर्ट देखने का अधिकार नहीं है।</div>';
+    }
+    var ym = state.salaryMonth;
+    var html = '<div class="section-title">सैलरी रिपोर्ट</div>';
+    html += '<div class="date-nav">';
+    html += '<button id="sal-prev">‹</button>';
+    html += '<div class="date-label">'+monthLabel(ym)+'</div>';
+    var isCurrentMonth = ym === todayStr().slice(0,7);
+    html += '<button id="sal-next" '+(isCurrentMonth?'disabled':'')+'>›</button>';
+    html += '</div>';
+
+    if(state.workers.length===0){
+      html += '<div class="card empty">कोई मज़दूर नहीं जोड़ा गया।</div>';
+      return html;
+    }
+
+    var rows = state.workers.map(function(w){
+      var p=0,h=0,l=0,a=0;
+      var dim = daysInMonth(ym);
+      for(var d=1; d<=dim; d++){
+        var iso = ym+'-'+pad(d);
+        var rec = state.attendance[iso];
+        if(rec && rec[w.id]){
+          var s = rec[w.id];
+          if(s==='P') p++; else if(s==='H') h++; else if(s==='L') l++; else if(s==='A') a++;
+        }
+      }
+      var total = p*w.dailyWage + h*w.dailyWage*0.5;
+      return {w:w,p:p,h:h,l:l,a:a,total:total};
+    });
+
+    var grandTotal = rows.reduce(function(sum,r){return sum+r.total;},0);
+
+    html += '<div class="salary-summary"><div class="amt">'+money(grandTotal)+'</div><div class="lbl">कुल देय सैलरी — '+monthLabel(ym)+'</div></div>';
+
+    html += '<div class="card"><table class="salary-table"><thead><tr>'+
+      '<th>नाम</th><th>P</th><th>H</th><th>L</th><th>A</th><th style="text-align:right">कुल</th>'+
+    '</tr></thead><tbody>';
+    rows.forEach(function(r){
+      html += '<tr><td class="name-cell">'+esc(r.w.name)+'</td><td>'+r.p+'</td><td>'+r.h+'</td><td>'+r.l+'</td><td>'+r.a+'</td><td class="num">'+money(r.total)+'</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<div class="hint-msg">P = पूरा दिन (पूरी मज़दूरी) · H = आधा दिन (आधी मज़दूरी) · L/A = छुट्टी/ग़ैरहाज़िर (कोई मज़दूरी नहीं)</div>';
+    return html;
+  }
+
+  /* ===================== USERS (ADMIN ONLY) ===================== */
+  function renderUsersView(){
+    var html = '<div class="section-title">यूज़र अकाउंट्स</div>';
+    html += '<div class="card">';
+    html += '<div class="worker-row"><div class="w-info"><div class="w-name">'+esc(state.adminCred.username)+'</div><div class="w-wage">पूरा अधिकार</div></div><span class="role-pill admin">एडमिन</span></div>';
+    if(state.subadmins.length===0){
+      html += '<div style="padding:14px 4px;color:var(--ink-soft);font-size:13px;">अभी कोई सब-एडमिन नहीं बनाया गया।</div>';
+    } else {
+      state.subadmins.forEach(function(u){
+        html += '<div class="worker-row">';
+        html += '<div class="w-info"><div class="w-name">'+esc(u.username)+'</div><div class="w-wage">'+permSummary(u.permissions)+'</div></div>';
+        html += '<div class="w-actions">';
+        html += '<button class="icon-btn" data-edit-user="'+u.id+'">✏️</button>';
+        html += '<button class="icon-btn" data-del-user="'+u.id+'">🗑️</button>';
+        html += '</div></div>';
+      });
+    }
+    html += '</div>';
+    html += '<button class="fab" id="btn-add-user">+</button>';
+    return html;
+  }
+  function permSummary(p){
+    var bits=[];
+    if(p.markAttendance) bits.push('हाज़िरी');
+    if(p.editPastAttendance) bits.push('पुरानी तारीख़ एडिट');
+    if(p.manageWorkers) bits.push('मज़दूर मैनेज');
+    if(p.editWageRate) bits.push('दिहाड़ी बदलें');
+    if(p.viewSalary) bits.push('सैलरी देखें');
+    return bits.length? bits.join(', ') : 'कोई अधिकार नहीं';
+  }
+
+  /* ===================== MODALS ===================== */
+  function renderModal(){
+    if(!state.modal) return '';
+    var m = state.modal;
+    if(m.type==='worker-form') return renderWorkerFormModal(m);
+    if(m.type==='wage-form') return renderWageFormModal(m);
+    if(m.type==='confirm-delete-worker') return renderConfirmModal('मज़दूर हटाएं?', 'क्या आप वाकई "'+esc(m.name)+'" को सूची से हटाना चाहते हैं? पुरानी हाज़िरी का रिकॉर्ड सुरक्षित रहेगा।', 'btn-confirm-del-worker');
+    if(m.type==='user-form') return renderUserFormModal(m);
+    if(m.type==='confirm-delete-user') return renderConfirmModal('सब-एडमिन हटाएं?', 'क्या आप वाकई "'+esc(m.name)+'" का अकाउंट हटाना चाहते हैं?', 'btn-confirm-del-user');
+    return '';
+  }
+
+  function renderWorkerFormModal(m){
+    var isEdit = !!m.worker;
+    var w = m.worker || {name:'', dailyWage:'', phone:''};
+    var canWage = can('editWageRate');
+    return ''+
+    '<div class="modal-overlay" id="modal-overlay">'+
+      '<div class="modal-sheet">'+
+        '<h3>'+(isEdit?'मज़दूर एडिट करें':'नया मज़दूर जोड़ें')+'</h3>'+
+        (m.error?'<div class="error-msg">'+esc(m.error)+'</div>':'')+
+        '<div class="field"><label>नाम</label><input id="wf-name" type="text" value="'+escAttr(w.name)+'" placeholder="जैसे: सुरेश कुमार"></div>'+
+        '<div class="field"><label>दिहाड़ी (₹ / दिन)</label><input id="wf-wage" type="number" inputmode="numeric" value="'+escAttr(w.dailyWage)+'" placeholder="जैसे: 500" '+(canWage?'':'disabled')+'>'+
+        (canWage?'':'<div style="font-size:12px;color:var(--ink-soft);margin-top:5px;">दिहाड़ी बदलने का अधिकार आपके पास नहीं है।</div>')+
+        '</div>'+
+        '<div class="field"><label>फ़ोन (वैकल्पिक)</label><input id="wf-phone" type="text" value="'+escAttr(w.phone||'')+'" placeholder="मोबाइल नंबर"></div>'+
+        '<div class="modal-actions">'+
+          '<button class="btn btn-outline" id="btn-cancel-modal">रद्द करें</button>'+
+          '<button class="btn btn-primary" id="btn-save-worker" data-id="'+(isEdit?w.id:'')+'">सेव करें</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function renderWageFormModal(m){
+    var w = m.worker;
+    return ''+
+    '<div class="modal-overlay top-align" id="modal-overlay">'+
+      '<div class="modal-sheet">'+
+        '<h3>दिहाड़ी बदलें — '+esc(w.name)+'</h3>'+
+        (m.error?'<div class="error-msg">'+esc(m.error)+'</div>':'')+
+        '<div class="field"><label>दिहाड़ी (₹ / दिन)</label><input id="wg-wage" type="number" inputmode="numeric" value="'+escAttr(w.dailyWage)+'" placeholder="जैसे: 500"></div>'+
+        '<div class="modal-actions">'+
+          '<button class="btn btn-outline" id="btn-cancel-modal">रद्द करें</button>'+
+          '<button class="btn btn-primary" id="btn-save-wage" data-id="'+w.id+'">सेव करें</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  function renderUserFormModal(m){
+    var isEdit = !!m.user;
+    var u = m.user || {username:'', password:'', permissions:{markAttendance:true, editPastAttendance:false, manageWorkers:false, editWageRate:false, viewSalary:true}};
+    var p = u.permissions;
+    return ''+
+    '<div class="modal-overlay top-align" id="modal-overlay">'+
+      '<div class="modal-sheet">'+
+        '<h3>'+(isEdit?'सब-एडमिन एडिट करें':'नया सब-एडमिन बनाएं')+'</h3>'+
+        (m.error?'<div class="error-msg">'+esc(m.error)+'</div>':'')+
+        '<div class="field"><label>यूज़रनेम</label><input id="uf-user" type="text" value="'+escAttr(u.username)+'" '+(isEdit?'disabled':'')+'></div>'+
+        '<div class="field"><label>पासवर्ड'+(isEdit?' (खाली छोड़ें अगर नहीं बदलना)':'')+'</label><input id="uf-pass" type="text" value="" placeholder="'+(isEdit?'नया पासवर्ड (वैकल्पिक)':'पासवर्ड बनाएं')+'"></div>'+
+        '<div style="margin-top:10px;">'+
+          toggleRow('perm-mark','आज की हाज़िरी भरना','मज़दूरों की रोज़ाना हाज़िरी दर्ज करना', p.markAttendance)+
+          toggleRow('perm-past','पुरानी तारीख़ एडिट करना','पिछली तारीख़ों की हाज़िरी बदलना (नहीं तो सिर्फ़ आज)', p.editPastAttendance)+
+          toggleRow('perm-workers','मज़दूर मैनेज करना','नया मज़दूर जोड़ना, नाम/फ़ोन बदलना, हटाना', p.manageWorkers)+
+          toggleRow('perm-wage','दिहाड़ी (₹) बदलना','मज़दूर की रोज़ की मज़दूरी/दिहाड़ी बदलने का अलग अधिकार', p.editWageRate)+
+          toggleRow('perm-salary','सैलरी रिपोर्ट देखना','महीने की सैलरी रिपोर्ट देखने की अनुमति', p.viewSalary)+
+        '</div>'+
+        '<div class="modal-actions" style="margin-top:16px;">'+
+          '<button class="btn btn-outline" id="btn-cancel-modal">रद्द करें</button>'+
+          '<button class="btn btn-primary" id="btn-save-user" data-id="'+(isEdit?u.id:'')+'">सेव करें</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+  function toggleRow(id,label,desc,checked){
+    return '<div class="toggle-row"><div><div class="t-label">'+label+'</div><div class="t-desc">'+desc+'</div></div>'+
+      '<label class="switch"><input type="checkbox" id="'+id+'" '+(checked?'checked':'')+'><span class="slider"></span></label></div>';
+  }
+
+  function renderConfirmModal(title, body, confirmId){
+    return ''+
+    '<div class="modal-overlay top-align" id="modal-overlay">'+
+      '<div class="modal-sheet">'+
+        '<h3>'+esc(title)+'</h3>'+
+        '<p style="color:var(--ink-soft);font-size:14px;line-height:1.5;margin:0 0 18px;">'+esc(body)+'</p>'+
+        '<div class="modal-actions">'+
+          '<button class="btn btn-outline" id="btn-cancel-modal">रद्द करें</button>'+
+          '<button class="btn btn-danger" id="'+confirmId+'" style="background:var(--danger);color:#fff;border:none;">हटाएं</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
+
+  /* ===================== HELPERS ===================== */
+  function esc(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function escAttr(s){ return esc(s); }
+
+  function addDays(iso, delta){
+    var d = new Date(iso+'T00:00:00');
+    d.setDate(d.getDate()+delta);
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  }
+  function addMonths(ym, delta){
+    var p = ym.split('-'); var y=parseInt(p[0],10), m=parseInt(p[1],10)-1;
+    var d = new Date(y, m+delta, 1);
+    return d.getFullYear()+'-'+pad(d.getMonth()+1);
+  }
+
+  /* ===================== EVENT BINDING ===================== */
+  function bindGlobalEvents(){
+    var logoutBtn = document.getElementById('btn-logout');
+    if(logoutBtn) logoutBtn.onclick = logout;
+
+    document.querySelectorAll('.nav-btn').forEach(function(btn){
+      btn.onclick = function(){ state.view = btn.getAttribute('data-view'); state.modal=null; render(); };
+    });
+
+    // Attendance view
+    var attPrev = document.getElementById('att-prev');
+    if(attPrev) attPrev.onclick = function(){ state.attDate = addDays(state.attDate,-1); render(); };
+    var attNext = document.getElementById('att-next');
+    if(attNext) attNext.onclick = function(){ if(state.attDate < todayStr()){ state.attDate = addDays(state.attDate,1); render(); } };
+
+    document.querySelectorAll('.status-btn').forEach(function(btn){
+      btn.onclick = function(){
+        var wId = btn.getAttribute('data-worker');
+        var s = btn.getAttribute('data-s');
+        if(!state.attendance[state.attDate]) state.attendance[state.attDate] = {};
+        var current = state.attendance[state.attDate][wId];
+        state.attendance[state.attDate][wId] = (current===s) ? undefined : s;
+        if(state.attendance[state.attDate][wId]===undefined) delete state.attendance[state.attDate][wId];
+        saveAttendance();
+        render();
+      };
+    });
+
+    // Workers view
+    var addWorkerBtn = document.getElementById('btn-add-worker');
+    if(addWorkerBtn) addWorkerBtn.onclick = function(){ state.modal={type:'worker-form'}; render(); };
+    document.querySelectorAll('[data-edit-worker]').forEach(function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute('data-edit-worker');
+        var w = state.workers.find(function(x){return x.id===id;});
+        state.modal = {type:'worker-form', worker:w};
+        render();
+      };
+    });
+    document.querySelectorAll('[data-edit-wage]').forEach(function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute('data-edit-wage');
+        var w = state.workers.find(function(x){return x.id===id;});
+        state.modal = {type:'wage-form', worker:w};
+        render();
+      };
+    });
+    document.querySelectorAll('[data-del-worker]').forEach(function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute('data-del-worker');
+        var w = state.workers.find(function(x){return x.id===id;});
+        state.modal = {type:'confirm-delete-worker', id:id, name:w?w.name:''};
+        render();
+      };
+    });
+
+    // Salary view
+    var salPrev = document.getElementById('sal-prev');
+    if(salPrev) salPrev.onclick = function(){ state.salaryMonth = addMonths(state.salaryMonth,-1); render(); };
+    var salNext = document.getElementById('sal-next');
+    if(salNext) salNext.onclick = function(){ if(state.salaryMonth < todayStr().slice(0,7)){ state.salaryMonth = addMonths(state.salaryMonth,1); render(); } };
+
+    // Users view
+    var addUserBtn = document.getElementById('btn-add-user');
+    if(addUserBtn) addUserBtn.onclick = function(){ state.modal={type:'user-form'}; render(); };
+    document.querySelectorAll('[data-edit-user]').forEach(function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute('data-edit-user');
+        var u = state.subadmins.find(function(x){return x.id===id;});
+        state.modal = {type:'user-form', user:u};
+        render();
+      };
+    });
+    document.querySelectorAll('[data-del-user]').forEach(function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute('data-del-user');
+        var u = state.subadmins.find(function(x){return x.id===id;});
+        state.modal = {type:'confirm-delete-user', id:id, name:u?u.username:''};
+        render();
+      };
+    });
+
+    // Modal generic cancel
+    var cancelBtn = document.getElementById('btn-cancel-modal');
+    if(cancelBtn) cancelBtn.onclick = function(){ state.modal=null; render(); };
+    var overlay = document.getElementById('modal-overlay');
+    if(overlay) overlay.addEventListener('click', function(e){ if(e.target.id==='modal-overlay'){ state.modal=null; render(); } });
+
+    // Save worker
+    var saveWorkerBtn = document.getElementById('btn-save-worker');
+    if(saveWorkerBtn){
+      saveWorkerBtn.onclick = function(){
+        var name = document.getElementById('wf-name').value.trim();
+        var wage = parseFloat(document.getElementById('wf-wage').value);
+        var phone = document.getElementById('wf-phone').value.trim();
+        if(!name){ state.modal.error='मज़दूर का नाम भरें।'; render(); return; }
+        if(!wage || wage<=0){ state.modal.error='सही दिहाड़ी (₹) भरें।'; render(); return; }
+        var id = saveWorkerBtn.getAttribute('data-id');
+        if(id){
+          var w = state.workers.find(function(x){return x.id===id;});
+          w.name=name; w.dailyWage=wage; w.phone=phone;
+        } else {
+          state.workers.push({id:uid(), name:name, dailyWage:wage, phone:phone});
+        }
+        saveWorkers();
+        state.modal=null; render();
+      };
+    }
+    var saveWageBtn = document.getElementById('btn-save-wage');
+    if(saveWageBtn){
+      saveWageBtn.onclick = function(){
+        var wage = parseFloat(document.getElementById('wg-wage').value);
+        if(!wage || wage<=0){ state.modal.error='सही दिहाड़ी (₹) भरें।'; render(); return; }
+        var id = saveWageBtn.getAttribute('data-id');
+        var w = state.workers.find(function(x){return x.id===id;});
+        w.dailyWage = wage;
+        saveWorkers();
+        state.modal=null; render();
+      };
+    }
+    var confirmDelWorker = document.getElementById('btn-confirm-del-worker');
+    if(confirmDelWorker){
+      confirmDelWorker.onclick = function(){
+        var id = state.modal.id;
+        state.workers = state.workers.filter(function(x){return x.id!==id;});
+        saveWorkers();
+        state.modal=null; render();
+      };
+    }
+
+    // Save user (sub-admin)
+    var saveUserBtn = document.getElementById('btn-save-user');
+    if(saveUserBtn){
+      saveUserBtn.onclick = function(){
+        var username = document.getElementById('uf-user').value.trim();
+        var password = document.getElementById('uf-pass').value;
+        var id = saveUserBtn.getAttribute('data-id');
+        var permissions = {
+          markAttendance: document.getElementById('perm-mark').checked,
+          editPastAttendance: document.getElementById('perm-past').checked,
+          manageWorkers: document.getElementById('perm-workers').checked,
+          editWageRate: document.getElementById('perm-wage').checked,
+          viewSalary: document.getElementById('perm-salary').checked,
+          manageUsers:false
+        };
+        if(id){
+          var u = state.subadmins.find(function(x){return x.id===id;});
+          if(password) u.password = password;
+          u.permissions = permissions;
+        } else {
+          if(!username){ state.modal.error='यूज़रनेम भरें।'; render(); return; }
+          if(!password){ state.modal.error='पासवर्ड भरें।'; render(); return; }
+          if(username===state.adminCred.username || state.subadmins.some(function(x){return x.username===username;})){
+            state.modal.error='यह यूज़रनेम पहले से मौजूद है।'; render(); return;
+          }
+          state.subadmins.push({id:uid(), username:username, password:password, permissions:permissions});
+        }
+        saveSubadmins();
+        state.modal=null; render();
+      };
+    }
+    var confirmDelUser = document.getElementById('btn-confirm-del-user');
+    if(confirmDelUser){
+      confirmDelUser.onclick = function(){
+        var id = state.modal.id;
+        state.subadmins = state.subadmins.filter(function(x){return x.id!==id;});
+        saveSubadmins();
+        state.modal=null; render();
+      };
+    }
+  }
+
+  loadAll();
+})();
+</script>
+</body>
+</html>
