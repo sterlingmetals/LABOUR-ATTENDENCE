@@ -2,8 +2,16 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>मजदूर हाज़िरी</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#16213E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="हाज़िरी">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -157,6 +165,8 @@
 <body>
 <div id="app"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 <script>
 (function(){
   "use strict";
@@ -174,6 +184,8 @@
     attDate: todayStr(),
     salaryMonth: todayStr().slice(0,7), // YYYY-MM
     modal:null,          // {type,...}
+    pendingRemote:null,   // agar modal khula ho to cloud se aaya naya data yaha rukta hai
+    cloudError:false,
     authMode:'login',
     authError:''
   };
@@ -203,28 +215,75 @@
     var p=ym.split('-'); return new Date(parseInt(p[0]),parseInt(p[1]),0).getDate();
   }
 
-  /* ===================== STORAGE ===================== */
-  async function loadAll(){
-    try{
-      var cred = await safeGet('admin_credentials');
-      state.adminCred = cred ? JSON.parse(cred.value) : null;
-      state.adminExists = !!state.adminCred;
-    }catch(e){ state.adminCred=null; state.adminExists=false; }
+  /* ===================== CLOUD STORAGE (Firebase Firestore) ===================== */
+  // ⚠️ Neeche apna Firebase project config paste karein (Firebase Console > Project settings > Your apps > SDK setup and configuration)
+  var firebaseConfig = {
+    apiKey: "AIzaSyBeUT7HtlVoQBOZbXlEDy8we-jSrhmrrfw",
+    authDomain: "labour-attendence-e0f66.firebaseapp.com",
+    projectId: "labour-attendence-e0f66",
+    storageBucket: "labour-attendence-e0f66.firebasestorage.app",
+    messagingSenderId: "213357114739",
+    appId: "1:213357114739:web:6b8f8b2066c019bedc0106"
+  };
 
-    try{ var w = await safeGet('workers'); state.workers = w? JSON.parse(w.value): []; }catch(e){ state.workers=[]; }
-    try{ var a = await safeGet('attendance'); state.attendance = a? JSON.parse(a.value): {}; }catch(e){ state.attendance={}; }
-    try{ var s = await safeGet('subadmins'); state.subadmins = s? JSON.parse(s.value): []; }catch(e){ state.subadmins=[]; }
+  var db = null;
+  var docRef = null;
+  try{
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    docRef = db.collection('mazdoor_haaziri').doc('data');
+  }catch(e){ console.error('Firebase init failed', e); }
 
-    state.booted = true;
+  function applyRemoteData(d){
+    d = d || {};
+    state.adminCred = d.adminCred || null;
+    state.adminExists = !!state.adminCred;
+    state.workers = d.workers || [];
+    state.attendance = d.attendance || {};
+    state.subadmins = d.subadmins || [];
+  }
+
+  function loadAll(){
+    if(!docRef){
+      state.booted = true; state.cloudError = true; render(); return;
+    }
+    docRef.onSnapshot(function(snap){
+      var d = snap.exists ? snap.data() : {};
+      if(state.modal){
+        state.pendingRemote = d; // form khula hai, abhi overwrite mat karo
+      } else {
+        applyRemoteData(d);
+      }
+      state.booted = true;
+      state.cloudError = false;
+      render();
+    }, function(err){
+      console.error('Firestore error', err);
+      state.booted = true;
+      state.cloudError = true;
+      render();
+    });
+  }
+
+  function persist(){
+    if(!docRef) return;
+    docRef.set({
+      adminCred: state.adminCred,
+      workers: state.workers,
+      attendance: state.attendance,
+      subadmins: state.subadmins
+    }, {merge:true}).catch(function(e){ console.error('Save failed', e); });
+  }
+  async function saveWorkers(){ persist(); }
+  async function saveAttendance(){ persist(); }
+  async function saveSubadmins(){ persist(); }
+  async function saveAdminCred(){ persist(); }
+
+  function closeModalAndRender(){
+    state.modal = null;
+    if(state.pendingRemote){ applyRemoteData(state.pendingRemote); state.pendingRemote = null; }
     render();
   }
-  async function safeGet(key){
-    try{ return await window.storage.get(key,false); }catch(e){ return null; }
-  }
-  async function saveWorkers(){ await window.storage.set('workers', JSON.stringify(state.workers), false); }
-  async function saveAttendance(){ await window.storage.set('attendance', JSON.stringify(state.attendance), false); }
-  async function saveSubadmins(){ await window.storage.set('subadmins', JSON.stringify(state.subadmins), false); }
-  async function saveAdminCred(){ await window.storage.set('admin_credentials', JSON.stringify(state.adminCred), false); }
 
   /* ===================== AUTH ===================== */
   function fullAdminPermissions(){
@@ -271,6 +330,11 @@
     var root = document.getElementById('app');
     if(!state.booted){
       root.innerHTML = '<div class="auth-wrap"><p class="sub">लोड हो रहा है…</p></div>';
+      return;
+    }
+    if(state.cloudError){
+      root.innerHTML = '<div class="auth-wrap"><div class="auth-mark">⚠️</div><h1>Cloud से जुड़ नहीं पाया</h1>'+
+        '<p class="sub">index.html के अंदर firebaseConfig सही तरीके से भरा है या नहीं, चेक करें। साथ ही Firestore database बना हुआ होना चाहिए और नियम (rules) पढ़ने-लिखने की अनुमति दें।</p></div>';
       return;
     }
     if(!state.session){
@@ -649,7 +713,7 @@
     if(logoutBtn) logoutBtn.onclick = logout;
 
     document.querySelectorAll('.nav-btn').forEach(function(btn){
-      btn.onclick = function(){ state.view = btn.getAttribute('data-view'); state.modal=null; render(); };
+      btn.onclick = function(){ state.view = btn.getAttribute('data-view'); closeModalAndRender(); };
     });
 
     // Attendance view
@@ -727,9 +791,9 @@
 
     // Modal generic cancel
     var cancelBtn = document.getElementById('btn-cancel-modal');
-    if(cancelBtn) cancelBtn.onclick = function(){ state.modal=null; render(); };
+    if(cancelBtn) cancelBtn.onclick = function(){ closeModalAndRender(); };
     var overlay = document.getElementById('modal-overlay');
-    if(overlay) overlay.addEventListener('click', function(e){ if(e.target.id==='modal-overlay'){ state.modal=null; render(); } });
+    if(overlay) overlay.addEventListener('click', function(e){ if(e.target.id==='modal-overlay'){ closeModalAndRender(); } });
 
     // Save worker
     var saveWorkerBtn = document.getElementById('btn-save-worker');
@@ -748,7 +812,7 @@
           state.workers.push({id:uid(), name:name, dailyWage:wage, phone:phone});
         }
         saveWorkers();
-        state.modal=null; render();
+        closeModalAndRender();
       };
     }
     var saveWageBtn = document.getElementById('btn-save-wage');
@@ -760,7 +824,7 @@
         var w = state.workers.find(function(x){return x.id===id;});
         w.dailyWage = wage;
         saveWorkers();
-        state.modal=null; render();
+        closeModalAndRender();
       };
     }
     var confirmDelWorker = document.getElementById('btn-confirm-del-worker');
@@ -769,7 +833,7 @@
         var id = state.modal.id;
         state.workers = state.workers.filter(function(x){return x.id!==id;});
         saveWorkers();
-        state.modal=null; render();
+        closeModalAndRender();
       };
     }
 
@@ -801,7 +865,7 @@
           state.subadmins.push({id:uid(), username:username, password:password, permissions:permissions});
         }
         saveSubadmins();
-        state.modal=null; render();
+        closeModalAndRender();
       };
     }
     var confirmDelUser = document.getElementById('btn-confirm-del-user');
@@ -810,13 +874,19 @@
         var id = state.modal.id;
         state.subadmins = state.subadmins.filter(function(x){return x.id!==id;});
         saveSubadmins();
-        state.modal=null; render();
+        closeModalAndRender();
       };
     }
   }
 
   loadAll();
 })();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
 </script>
 </body>
 </html>
